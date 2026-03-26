@@ -1,30 +1,55 @@
-<!DOCTYPE html>
+!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Cat Manager</title>
+    <title>CatPhotoApp - Database Manager</title>
     <style>
-        body { font-family: sans-serif; max-width: 400px; margin: 40px auto; padding: 20px; border: 1px solid #ccc; border-radius: 8px; }
-        input { width: 70%; padding: 8px; }
-        button { padding: 8px; cursor: pointer; }
+        body { font-family: sans-serif; background-color: #f4f4f9; color: #333; margin: 0; padding: 20px; }
+        main { max-width: 600px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        h1 { color: #111; border-bottom: 2px solid #2b7a78; padding-bottom: 10px; }
+        h2 { color: #2b7a78; }
+        
+        .db-section { margin-top: 30px; background: #eef2f3; padding: 20px; border-radius: 8px; }
+        .input-group { margin-bottom: 15px; display: flex; gap: 10px; }
+        input[type="text"] { flex: 1; padding: 12px; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; }
+        
+        button { cursor: pointer; padding: 10px 15px; border: none; border-radius: 4px; font-weight: bold; transition: 0.3s; }
+        .add-btn { background-color: #2b7a78; color: white; }
+        .edit-btn { background-color: #ffc107; color: black; margin-left: 5px; }
+        .del-btn { background-color: #dc3545; color: white; margin-left: 5px; }
+        button:hover { opacity: 0.8; }
+        
         ul { list-style: none; padding: 0; margin-top: 20px; }
-        li { background: #f4f4f4; margin: 5px 0; padding: 10px; display: flex; justify-content: space-between; border-radius: 4px; }
-        .btns button { margin-left: 5px; font-size: 12px; }
+        li { background: white; border: 1px solid #ddd; margin-bottom: 10px; padding: 15px; display: flex; justify-content: space-between; align-items: center; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .cat-name { font-size: 1.1em; color: #444; }
     </style>
 </head>
 <body>
 
-    <h2>Cat Database</h2>
-    <input type="text" id="catName" placeholder="Cat name">
-    <button onclick="handleSubmit()">Add</button>
+<main>
+    <h1>CatPhotoApp</h1>
+    <section>
+        <h2>Cat Photos</h2>
+        <p>Everyone loves cats! Use the tool below to manage our community cat database.</p>
+    </section>
 
-    <ul id="catList"></ul>
+    <section class="db-section">
+        <h2>Manage Cat Database</h2>
+        <div class="input-group">
+            <input type="text" id="catName" placeholder="Enter cat name here...">
+            <button class="add-btn" onclick="handleSubmit()">Save Cat</button>
+        </div>
 
-    <script>
-        const API = 'https://jaseembackend.onrender.com/api';
-        let editingId = null;
+        <ul id="catList"></ul>
+    </section>
+</main>
 
-        async function loadCats() {
+<script>
+    const API = 'https://jaseembackend.onrender.com/api';
+    let editingId = null;
+
+    async function loadCats() {
+        try {
             const res = await fetch(`${API}/cats`);
             const cats = await res.json();
             const list = document.getElementById('catList');
@@ -32,43 +57,50 @@
             cats.forEach(cat => {
                 const li = document.createElement('li');
                 li.innerHTML = `
-                    <span>${cat.name}</span>
-                    <div class="btns">
-                        <button onclick="editCat('${cat._id}', '${cat.name}')">Edit</button>
-                        <button onclick="deleteCat('${cat._id}')">Del</button>
+                    <span class="cat-name"><strong>${cat.name}</strong></span>
+                    <div>
+                        <button class="edit-btn" onclick="editCat('${cat._id}', '${cat.name}')">Edit</button>
+                        <button class="del-btn" onclick="deleteCat('${cat._id}')">Delete</button>
                     </div>`;
                 list.appendChild(li);
             });
-        }
+        } catch (err) { console.error("Error:", err); }
+    }
 
-        async function handleSubmit() {
-            const name = document.getElementById('catName').value;
-            if (!name) return;
-            const method = editingId ? 'PUT' : 'POST';
-            const url = editingId ? `${API}/cats/${editingId}` : `${API}/submit-cat`;
-            
-            await fetch(url, {
-                method: method,
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ catName: name })
-            });
+    async function handleSubmit() {
+        const input = document.getElementById('catName');
+        const name = input.value;
+        if (!name) return alert("Type a name first!");
 
-            editingId = null;
-            document.getElementById('catName').value = '';
-            loadCats();
-        }
+        const method = editingId ? 'PUT' : 'POST';
+        const url = editingId ? `${API}/cats/${editingId}` : `${API}/submit-cat`;
+        
+        await fetch(url, {
+            method: method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ catName: name })
+        });
 
-        function editCat(id, name) {
-            editingId = id;
-            document.getElementById('catName').value = name;
-        }
+        editingId = null;
+        input.value = '';
+        loadCats();
+    }
 
-        async function deleteCat(id) {
+    function editCat(id, name) {
+        editingId = id;
+        document.getElementById('catName').value = name;
+        document.getElementById('catName').focus();
+    }
+
+    async function deleteCat(id) {
+        if(confirm("Permanently delete this cat?")) {
             await fetch(`${API}/cats/${id}`, { method: 'DELETE' });
             loadCats();
         }
+    }
 
-        loadCats();
-    </script>
+    loadCats();
+</script>
+
 </body>
 </html>
